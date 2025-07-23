@@ -1,6 +1,13 @@
-<p style="text-align: center;"> <img src="https://github.com/YahyaGamal/Schelling_ABM_assignment/blob/main/Logo/Logo.png?raw=true" alt="drawing" width="125"/> </p>
+<img src="https://github.com/YahyaGamal/Schelling_ABM_assignment/blob/main/Logo/Logo.png?raw=true" alt="drawing" width="125"/>
 
 ## Schelling Agent Based Model (ABM) assignment
+
+The repository includes the following relevant files:
+1. `assignment.ipynb`: a Python Jupyter notebook including:
+    - Schelling model description
+    - Code block for runnin the Schelling model with different input parameters
+    - Assignment questions to be addressed by the students
+2. `schelling.py`: a Python file with the full code for the Schelling model. Understanind the details of this file is optional and is not required to answer the assignment questions.
 
 To run the model in the `assignment.ipynb` Jupyter notebook, you need to install the following packages:
 - `numpy` version 1.26.4
