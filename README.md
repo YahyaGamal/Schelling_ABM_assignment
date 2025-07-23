@@ -1,4 +1,4 @@
-<img src="https://github.com/YahyaGamal/Schelling_ABM_assignment/blob/main/Logo/Logo.png?raw=true" alt="drawing" width="125"/> 
+<p style="text-align: center;"> <img src="https://github.com/YahyaGamal/Schelling_ABM_assignment/blob/main/Logo/Logo.png?raw=true" alt="drawing" width="125"/> </p>
 
 ## Schelling Agent Based Model (ABM) assignment
 
