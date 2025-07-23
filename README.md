@@ -1,4 +1,6 @@
-## <img src="https://github.com/YahyaGamal/Schelling_ABM_assignment/blob/main/Logo/Logo.png?raw=true" alt="drawing" width="125"/> P/ALLM (Priority per Activity Large Language Model)
+<img src="https://github.com/YahyaGamal/Schelling_ABM_assignment/blob/main/Logo/Logo.png?raw=true" alt="drawing" width="125"/> 
+
+## Schelling Agent Based Model (ABM) assignment
 
 To run the model in the `assignment.ipynb` Jupyter notebook, you need to install the following packages:
 - `numpy` version 1.26.4
