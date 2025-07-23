@@ -7,7 +7,7 @@ The repository includes the following relevant files:
     - Schelling model description
     - Code block for runnin the Schelling model with different input parameters
     - Assignment questions to be addressed by the students
-2. `schelling.py`: a Python file with the full code for the Schelling model. Understanind the details of this file is optional and is not required to answer the assignment questions.
+2. `schelling.py`: a Python file with the full code for the Schelling model. Understaning the details of this file is optional and is not required to answer the assignment questions.
 
 To run the model in the `assignment.ipynb` Jupyter notebook, you need to install the following packages:
 - `numpy` version 1.26.4
@@ -24,4 +24,4 @@ Alternatively, you can run the following command to install the libraries withou
 pip install numpy==1.26.4 matplotlib==3.10.0 ipython==8.32.0
 ```
 
-If you face issues with the Python libraries installation and cannot run the model in the Jupyter notebook, you can run an online version of the model through this [NetLogo Web link](https://www.netlogoweb.org/launch#https://www.netlogoweb.org/assets/modelslib/Sample%20Models/Social%20Science/Segregation.nlogo) (note that the `similarity_threshold` is labelled as `%-similar-wanted` in the NetLogo version).
+If you face issues with installing the Python libraries and cannot run the model in the Jupyter notebook, you can run an online version of the model through this [NetLogo Web link](https://www.netlogoweb.org/launch#https://www.netlogoweb.org/assets/modelslib/Sample%20Models/Social%20Science/Segregation.nlogo) (note that the `similarity_threshold` is labelled as `%-similar-wanted` in the NetLogo version).
