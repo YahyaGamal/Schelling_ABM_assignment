@@ -110,10 +110,10 @@ class SchellingModel:
             return 100
         return 100 * total_similar / total_neighbors
     
-def run_schelling_model(
+def run_schelling_model_no_graphs(
         steps:int=30,
-        width:int=30,
-        height:int=30,
+        width:int=50,
+        height:int=50,
         density:float=0.9,
         similarity_threshold:float=0.5
 ):
@@ -164,4 +164,78 @@ def run_schelling_model(
     plt.close()
 
     # Required to show animation in notebook
+    return Image(filename=rf"{python_directory}/schelling_ani.gif")
+
+def run_schelling_model(
+        steps: int = 30,
+        width: int = 50,
+        height: int = 50,
+        density: float = 0.9,
+        similarity_threshold: float = 0.5
+):
+    rf"""
+    Runs the Schelling Agent Based Model (ABM) and saves the animation as `schelling_ani.gif`
+
+    Parameters
+    ----------
+    steps: int
+        Number of simulation steps.
+    width, height: int
+        Dimensions of the spatial grid.
+    density: float
+        Proportion of grid cells initially occupied by agents.
+    similarity_threshold: float
+        Required proportion of similar neighbors for agent satisfaction.
+
+    Returns
+    -------
+    A GIF image displayable in a Jupyter notebook.
+    """
+
+    # Find python directory
+    python_directory = os.getcwd()
+
+    # Create model
+    model = SchellingModel(width=width, height=height, density=density, similarity_threshold=similarity_threshold)
+
+    # Prepare figure with 2 subplots
+    fig, (ax_grid, ax_plot) = plt.subplots(1, 2, figsize=(10, 5))
+    cmap = mcolors.ListedColormap(['white', 'blue', 'orange'])
+    im = ax_grid.imshow(model.grid, cmap=cmap, vmin=0, vmax=2)
+    # ax_grid.set_title("Agent Grid")
+    # ax_grid.axis('off')
+
+    x_vals = []
+    y_similar = []
+    y_unhappy = []
+    line_similar, = ax_plot.plot([], [], label="% Similar", color="green")
+    line_unhappy, = ax_plot.plot([], [], label="% Unhappy", color="red")
+
+    ax_plot.set_xlim(0, steps)
+    ax_plot.set_ylim(0, 100)
+    ax_plot.set_xlabel("Step")
+    ax_plot.set_ylabel("Percentage")
+    ax_plot.set_title("Segregation Statistics")
+    ax_plot.legend(loc="upper right")
+
+    def update(frame):
+        model.step()
+        im.set_array(model.grid)
+
+        # Track and plot statistics
+        x_vals.append(frame)
+        y_similar.append(model.percent_similar())
+        y_unhappy.append(model.percent_unhappy())
+
+        line_similar.set_data(x_vals, y_similar)
+        line_unhappy.set_data(x_vals, y_unhappy)
+
+        ax_grid.set_title(f"Step {frame+1}\n% Similar: {model.percent_similar():.2f} | % Unhappy: {model.percent_unhappy():.2f}")
+        fig.canvas.draw_idle()
+        return [im, line_similar, line_unhappy]
+
+    ani = animation.FuncAnimation(fig, update, frames=steps, interval=800, repeat=False, blit=False)
+    ani.save(rf"{python_directory}/schelling_ani.gif")
+    plt.close()
+
     return Image(filename=rf"{python_directory}/schelling_ani.gif")
