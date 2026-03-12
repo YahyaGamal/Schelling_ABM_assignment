@@ -1,0 +1,328 @@
+breed [pedestrians pedestrian]
+undirected-link-breed [ passengers passenger ]
+
+pedestrians-own [
+  location                      ; Current location of the pedestrian (origin node on current link)
+  destination                   ; Destination of the pedestrian (destination node on current link)
+  location-time                 ; Time step at which the pedestrian was at the loaction
+  destination-time              ; Time step at which the pedestrian reached the destination
+  top-speed                     ; Maximum speed of the pedestrian
+  speed                         ; Current speed of the pedestrian
+  progress                      ; Total distance of the current progress on a road (total distance from origin to reach the destination)
+  remaining-progress            ; Remaining distance of the current progress on a road (remaining distance from origin to reach the destination)
+  trip-legs                     ; the paths or bus services and stop points on each leg of the total trip
+  trip-legs-modes               ; the mode of transport used in each trip leg ("bus", "walk")
+  trip-legs-expected-periods    ; the expected time steps to be taken to finish each respective trip-leg
+  trip                          ; the path to achieve the current leg (can be a list of roads or a paired list of a node and a bus template)
+  i-leg                         ; the index of the current leg
+  active?                       ; if pedestrian has not finished all its required trips
+  at-activity?                  ; whether the pedestrian is at a b-destination for an activity or not
+  initial-step?                 ; whether the pedestrian is at the initial trip from home or not
+  
+  ;; added in greens ABM
+  my-type                       ; "short", "utility", "random", "environment", "dog"
+  my-entry                      ; entry point of the pedestrian
+  target-distance               ; target walk distance to be made
+  start-time                    ; trip start time
+  at-entry?                     ; whether the pedestrian is at an entry node or not
+  
+  access-weight                 ; the relative importance of the accessibility quality (e.g., paved) 
+  view-weight                   ; the relative importance of pleasent views ()
+  pet-weight                    ; the relative importance of appropriateness of dog walks 
+  
+  n-dogs                        ; the number of dogs the pedestrian walks
+  my-dogs                       ; list of the dogs the pedestrian walks
+  patience                      ; the patience of the owner to wait for a dog
+  pause?                        ; whether the pedestrian is pausing its trip or not (e.g., due to a dog)
+]
+
+passengers-own [
+]
+
+;; Initialise the pedestrians
+to pedestrians-init [input-number-of-pedestrians]
+  
+  
+  create-pedestrians input-number-of-pedestrians [
+    ;; initialise visual parameters
+    set color green                     ; Set pedestrian color
+    set shape "person"                ; Set pedestrian shape
+    set size 13
+    
+    ;; assign weights
+    assign-type-weights
+    visualise-by-type
+    
+    ;; initialise parameters
+    set initial-step? true
+    set at-activity? true
+    set at-entry? true
+;    set my-home one-of buildings with [ b-type = "home" ]     ; Select a random starting point
+    set my-entry one-of nodes with [entry? = true]
+    set location my-entry
+    move-to location
+    set top-speed ( (random-float (fastest-pedestrian - slowest-pedestrian)) + (1.0 * slowest-pedestrian) ) * (tick-time-scale / 3600) ; Set random maximum speed
+    set speed top-speed
+    set trip-legs (list)
+    set trip (list) ;; Added by Tatsuya
+    set trip-legs-modes (list)  ;; Added by Tatsuya
+    set trip-legs-expected-periods (list)  ;; Added by Tatsuya
+    set active? true
+    
+    ;; green space additions
+    if my-type = "Dog walker" [set n-dogs 1]
+    set my-dogs (list)
+    set pause? false
+    set start-time ( random ((max-start-time + 1) * 60) ) / tick-time-scale
+    
+    hide-turtle
+  ]
+
+end
+
+to assign-type-weights
+  ;; Load dataset
+  let csv-data csv:from-file "Data/showcase/types_weights.csv"
+  
+  ;; Separate the header row from the data rows
+  let header-row first csv-data
+  let data-rows butfirst csv-data
+  
+  ;; Generate a random number
+  let rng random 100 + 1
+  let threshold 0
+  
+  ;; Loop through the data rows and create nodes
+  foreach data-rows [
+    ;; item 0 -> type
+    ;; item 1 -> percentage
+    ;; item 2 -> acesss weight
+    ;; item 3 -> view weight
+    ;; item 4 -> availability
+    row ->
+    set threshold threshold + item 1 row
+    if rng <= threshold [
+      set my-type item 0 row
+      set access-weight item 2 row
+      set view-weight item 3 row
+      set pet-weight item 4 row
+      stop
+    ]
+  ]
+end
+
+to visualise-by-type
+  (ifelse
+    my-type = "No preferences" [set color black]
+    my-type = "Environmental" [set color green]
+    my-type = "Dog walker" [set color red]
+  )
+end
+
+to trip-short
+  let o my-entry  ; origin
+  let m nobody    ; midpoint
+  let d my-entry  ; destination
+  set target-distance (random-float (max-walk-distance - min-walk-distance)) + min-walk-distance
+  let m-distance target-distance / 2
+  
+  ;; select the midway point of the circular trip
+  let m-candidates nobody
+  while [m-candidates = nobody] [
+    set m-candidates nodes with [
+      nw:weighted-distance-to o distance_to_destination < m-distance
+      and nw:weighted-distance-to o distance_to_destination > (m-distance * 0.8)
+    ]
+  ]
+  
+  ;; midway point first leg
+  set m one-of m-candidates 
+  let leg-1 nobody
+  let leg-2 nobody
+  
+  ask o [set leg-1 nw:weighted-path-to m distance_to_destination]
+  
+  ask link-set leg-1 [set distance_ignore_previous 9999]
+  ask m [set leg-2 nw:weighted-path-to o distance_ignore_previous]
+  ask link-set leg-1 [set distance_ignore_previous distance_to_destination]
+  
+  set trip reduce sentence (list leg-1 leg-2)
+  set trip-legs lput trip trip-legs
+  set trip-legs-modes lput "walk" trip-legs-modes
+  
+  ask link-set trip [set footfall_all footfall_all + 1]
+end
+
+to trip-utility
+  let o my-entry  ; origin
+  let m nobody    ; midpoint
+  let d my-entry  ; destination
+  set target-distance (random-float (max-walk-distance - min-walk-distance)) + min-walk-distance
+  let m-distance target-distance / 2
+  
+  ;; select the midway point of the circular trip
+  let m-candidates nobody
+  let factor 0.95
+  while [m-candidates = nobody] [
+    set m-candidates nodes with [
+      nw:weighted-distance-to o distance_to_destination < m-distance
+      and nw:weighted-distance-to o distance_to_destination > (m-distance * factor)
+    ]
+    set factor factor - 0.05
+  ]
+  
+  ;; find the m yielding the highest subjective quality
+  let max-distance max [distance_to_destination] of roads
+  ask roads [
+    set quality 
+    access * [access-weight] of myself +
+    view   * [view-weight]   of myself +
+    pet    * [pet-weight]    of myself
+    set quality_ignore_previous quality
+    set quality_to_distance quality * (distance_to_destination / max-distance)
+    set quality_to_distance_ignore_previous quality_to_distance
+  ]
+  let leg-1-qualities (list)
+  let leg-1-destinations (list)
+  ask m-candidates [
+    let leg-1-quality nw:weighted-distance-to o quality_to_distance
+    set leg-1-qualities lput leg-1-quality leg-1-qualities
+    set leg-1-destinations lput self leg-1-destinations
+  ]
+  ;; find the maximum possible quality to achieve (minimum quality disutility)
+  let min-leg-1-quality min (leg-1-qualities)
+  let i position min-leg-1-quality leg-1-qualities
+  set m item i leg-1-destinations
+  
+  ;; plan the trip
+  let leg-1 nobody
+  let leg-2 nobody
+  
+  ask o [set leg-1 nw:weighted-path-to m quality]
+  ask link-set leg-1 [set quality_to_distance_ignore_previous 9999]
+  ask m [set leg-2 nw:weighted-path-to o quality_to_distance_ignore_previous]
+  ask link-set leg-1 [set quality_to_distance_ignore_previous quality_to_distance]
+  
+  set trip reduce sentence (list leg-1 leg-2)
+  set trip-legs lput trip trip-legs
+  set trip-legs-modes lput "walk" trip-legs-modes
+  
+  ask link-set trip [set footfall_all footfall_all + 1]
+end
+
+to pedestrians-travel-green
+  (ifelse at-entry? and start-time <= ticks [
+    (ifelse 
+      my-type =  "No preferences" [trip-short]
+      my-type != "No preferences" [trip-utility]
+    )
+    let o-node location
+    pedestrians-set-destination o-node
+    set remaining-progress progress   ; Set initial remaining progress
+    set at-activity? false
+    set at-entry? false
+    ask turtle-set my-dogs [
+      set at-entry? false
+      show-turtle
+      ask my-leash [show-link]
+    ]
+    show-turtle
+    ]
+    ;; if the pedestrian is not at an entry (i.e., they are moving across the network)
+    not at-entry? [
+      ifelse item i-leg trip-legs-modes = "walk" and pause? = false [move-at-pedestrians-speed]
+      []
+      
+      ; If the pedestrian reaches end of road, start on the next road of the trip if there is one
+      if scaled-distance location >= progress and not empty? trip [
+        set destination-time ticks ; update the destination time
+        set location-time ticks ; update the new location time
+        let difference scaled-distance location - progress ; Calculate remaining distance
+                                                           ; remove current trip link and proceed to the next link (new origin is the old destination)
+        pedestrians-set-destination destination ; the input to pedestrians-set-destination is the new origin
+                                                ; a road link is removed from the trip here
+        set speed difference
+        move-at-pedestrians-speed
+        set speed top-speed
+      ]
+      
+      ;;
+      ; If the pedestrian reaches end of road and it is the last road link in the trip
+      (ifelse scaled-distance location >= progress and empty? trip and i-leg + 1 = length trip-legs [
+        set destination-time ticks ; update the destination time
+                                   ;; assure the road period is updated only in case the pedestrian was moving
+                                   ;; if location is not equal to destination, this means that the pedestrian the current leg in the trip-legs is empty
+        if location != destination [
+          ask road [who] of location [who] of destination [ ; allocate the period to the road link
+            set current_period [destination-time] of myself - [location-time] of myself
+          ]
+        ]
+        
+        set location-time ticks ; update the new location time
+        set location my-entry
+        move-to my-entry
+        
+        set active? false
+        set at-entry? true
+        hide-turtle
+        ask turtle-set my-dogs [
+          set active? false
+          set at-entry? true
+          ask my-leash [hide-link]
+          notify-other-curious-dogs
+          hide-turtle
+        ]
+        ]
+      )
+    ]
+  )
+end
+
+;; move pedestrians if they are active
+to pedestrians-move-green
+;  ifelse my-home = location and b-destination != my-home and moving = true [
+  if active? = true [pedestrians-travel-green]
+end
+
+;; move pedestrian at its correct speed
+;; does not check the pedestrians ahead
+to move-at-pedestrians-speed
+  fd speed * mile-to-model-factor ; Move forward
+  set remaining-progress scaled-distance destination ; Update remaining progress distance
+end
+
+;; Moves to the next link once called
+;; `new-location` refers to the new origin of the trip,
+;; when called by a vehicle, this `new-location` (new origin) is the vehicle's previous `destination` (old destination)
+to pedestrians-set-destination [new-location]
+
+  ;; If there is no remaining route, don't crash. Added by Tatsuya
+  if empty? trip [
+    ;; You can choose your preferred behavior here:
+    ;; Option A: just stop advancing
+    stop
+    ;; Option B: or mark as arrived / teleport (only if that makes sense)
+    ;; set location new-location
+    ;; set destination new-location
+    ;; set progress 0
+    ;; stop
+  ]
+  
+  let new-road first trip
+  set trip but-first trip
+  let new-destination 0
+  
+  ; Select the correct end of the road for the new destination
+  ask  new-road [  
+    ifelse end1 = new-location[
+      set new-destination end2
+    ][
+      set new-destination end1
+    ]
+  ]
+  set location new-location
+  set destination new-destination
+  move-to location                   ; Move to the new location
+  face destination                   ; Face the new destination
+  set progress scaled-distance destination
+end

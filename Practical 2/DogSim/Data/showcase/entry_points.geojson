@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "entry_points",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::27700" } },
+"features": [
+{ "type": "Feature", "properties": { "id": 0 }, "geometry": { "type": "Point", "coordinates": [ 449518.036399876640644, 208642.989087416732218 ] } },
+{ "type": "Feature", "properties": { "id": 1 }, "geometry": { "type": "Point", "coordinates": [ 449628.200634557404555, 208958.247141160070896 ] } },
+{ "type": "Feature", "properties": { "id": 2 }, "geometry": { "type": "Point", "coordinates": [ 449978.842517587123439, 207967.26966033806093 ] } }
+]
+}

@@ -1,0 +1,240 @@
+ ;; Define the breed for nodes
+breed [nodes node]
+undirected-link-breed [ roads road ]
+
+; Define the variables for roads
+roads-own [
+  r-id ; ID of road
+  distance_to_destination ; Distance to the destination node (in miles)
+  distance_to_destination_bus ; Distance to the destination node that can be done by a bus (999999 if bus does not pass) 
+  speed_limmit ; Speed limit of the road (in (miles/hour) / 100)
+  current_speeds ; Current speeds on the road (Any element cannot be higher than the speed_limmit)
+  current_period ; last period taken to make the trip
+  current_period_non_car ; last period taken to make the trip by anything other than a car (shortest period of pedestrians and busses is allocated)
+  mean_period_walk ; period taken to a make a trip by a pedestrian walking at the mean input speed (max-pedestrian + min-pedestrian / 2)
+  buses? ; Whether a bus passes through the road link
+  
+  quality                  ; Quality (assuming equal weights)
+  quality_to_distance      ; Quality standardised based on distance
+  access                   ; accessibility [0, 1]
+  view                     ; Pleasent view [0, 1]
+  pet                      ; Pleasent for dogs weight [0, 1]
+  distance_ignore_previous ; Ditance to destinations adjusted so that pedestrians do not reselect the same route back to the origin of their trip
+  quality_to_distance_ignore_previous ; Quality standardised based on distance and adjusted so that pedestrians do not reselect the same route back to the origin of their trip
+  quality_ignore_previous  ; Quality (assuming equal weights) adjusted so that pedestrians do not reselect the same route back
+  access_ignore_previous   ; Accessibility quality adjusted so that pedestrians do not reselect the same route back
+  view_ignore_previous     ; Pleasent view quality adjusted so that pedestrians do not reselect the same route back
+  pet_ignore_previous      ; Appropriateness for dogs quality adjusted so that pedestrians do not reselect the same route back
+  footfall_all             ; The number of pedestrians using the road
+  footfall_dogs            ; The number of dog walkers using the path
+  
+]
+
+; Define the variables for nodes
+nodes-own[
+  n-id ; ID of node
+  n-xpos ; x-position of node
+  n-ypos ; y-position of node
+  sp-id  ; stop point ID of node (-1 if not a stop point)
+  entry? ; whether the node is an entry point or not
+  buses-id      ; the service number of the buses passing through the node (empty list if not a stop point)
+  buses-freq    ; the frequency of the serive (empty list if not a stop point) [minutes]
+  buses-start   ; whether the buses starts from the startpoint or not
+  buses-period  ; the period until the next bus arrives (empty list if not a stop point) [ticks]
+  next-SPs      ; the list of the next stop points for each bus service (the indices refer to the the buses-id in the respective index)
+  buses-schedule  ; the list of the expected ticks at which the bus will reach the stop point (the indices refer to the buses-id in the respective index)
+]
+
+; Procedure to load the network from CSV files
+to load-network
+  ;; Set the network context to nodes and roads
+  nw:set-context nodes roads
+
+  ;; Load the node list from a CSV file
+  let csv-data csv:from-file "Data/showcase/node_list.csv"
+
+  ;; Separate the header row from the data rows
+  let header-row first csv-data
+  let data-rows butfirst csv-data
+
+  ;; Loop through the data rows and create nodes
+  foreach data-rows [
+    row ->
+    create-nodes 1 [
+      ;; Set the node's ID, x-position, and y-position
+      set n-id (item 0 row )
+      set n-xpos  item 1 row  * max-pxcor
+      set n-ypos  item 2 row  * max-pycor
+      set sp-id (item 3 row )
+      set entry? item 4 row
+      ifelse entry? = 1 [set entry? true] [set entry? false]
+      set buses-id (list)
+      set buses-freq (list)
+      set buses-start (list)
+      set buses-period (list)
+      set buses-schedule (list)
+      set next-SPs (list)
+      set shape "circle"
+;      ifelse sp-id  = -1 [set size 3 set color grey] 
+;      [set size 5 set color grey - 3]
+      ifelse entry? = false 
+      [set size 3 set color grey] 
+      [set size 5 set color grey - 3]
+      setxy n-xpos n-ypos
+   ]
+  ]
+  
+
+  ;; Load the link list from a CSV file
+  set csv-data csv:from-file "Data/showcase/link_list.csv"
+
+  ;; Separate the header row from the data rows
+  set header-row first csv-data
+  set data-rows butfirst csv-data
+
+  ;; Loop through the data rows and create roads between nodes
+  foreach data-rows [
+    row ->
+      let link-distance 0
+      let t1   one-of nodes with [ n-id = item 1 row ]
+      let t2   one-of nodes with [ n-id = item 2 row ]
+    ifelse t1 != nobody and t2 != nobody [
+      ;; Create a road between the two nodes and set its properties
+      ask t1 [
+        set link-distance distance t2
+        create-road-with t2 [
+          set r-id item 0 row
+          set color gray
+          set thickness 0.1
+          set current_speeds (list)
+          set distance_to_destination link-distance
+          let l-speed item 3 row
+          set speed_limmit 1.0 * 1.0
+          if l-speed  = "30 mph" [
+            set speed_limmit 30 * (tick-time-scale / 3600)
+            set thickness 0.1
+          ]
+          if l-speed  = "20 mph" [
+            set speed_limmit 20 * (tick-time-scale / 3600)
+            set thickness 0.1
+          ]
+;          let walk_speed_mean (fastest-pedestrian + slowest-pedestrian) / 2
+;          set walk_speed_mean walk_speed_mean * (tick-time-scale / 3600)
+;          type walk_speed_mean type "\n"
+;          ;; calculate the current_period
+;          set current_period distance_to_destination / speed_limmit
+;          set mean_period_walk distance_to_destination / walk_speed_mean
+          set buses? false
+        ]
+      ]
+    ][
+      print " error in link or node data"
+    ]
+  ]
+  
+  ;; scale the calculated distances to mile (regardless of the size of the space)
+  set model-to-mile-factor 0
+  ask road 69 70 [
+    set model-to-mile-factor 0.016 / distance_to_destination
+    set mile-to-model-factor distance_to_destination / 0.016
+  ]
+  ;; initialise path parameters
+  ask roads [
+    ;; initialise road network parameters
+    set distance_to_destination distance_to_destination * model-to-mile-factor
+    set distance_ignore_previous distance_to_destination
+    set access 0.5
+    set view 0.5
+    set pet 0.5
+    set access_ignore_previous 0.5
+    set view_ignore_previous 0.5
+    set pet_ignore_previous 0.5
+    ;; calculate the current_period after scaling the distance to destination
+    set current_period distance_to_destination / speed_limmit
+    ;; mean walk period
+    let walk_speed_mean (fastest-pedestrian + slowest-pedestrian) / 2
+    set walk_speed_mean walk_speed_mean * (tick-time-scale / 3600)
+    set mean_period_walk distance_to_destination / walk_speed_mean
+  ]
+  
+  ;; Bus stop points
+  ;; Load the trips list from a CSV file
+  set csv-data csv:from-file "Data/trips_list.csv"
+
+  ;; Separate the header row from the data rows
+  set header-row first csv-data
+  set data-rows butfirst csv-data
+
+  ;; Loop through the data rows and create nodes
+  let current-time 0
+  foreach data-rows [
+    row ->
+    ;; item 0 row is service
+    ;; item 1 row is sp-id
+    ;; item 2 row is time
+    ;; item 3 row is frequency
+    ;; item 4 row is start
+    ask nodes with [sp-id = item 1 row and not member? (item 0 row) buses-id] [
+      ask nodes with [member? (item 0 row) buses-id] [  ;; add the next bus stops to next-SPs
+        let i position (item 0 row) buses-id
+        let next-SPs-temp item i next-SPs
+        set next-SPs-temp lput (item 1 row) next-SPs-temp
+        set next-SPs replace-item i next-SPs next-SPs-temp
+      ]
+      set buses-id lput (item 0 row) buses-id   
+      set buses-freq lput (item 3 row) buses-freq
+      ifelse item 4 row = 1 [set buses-start lput true buses-start] [set buses-start lput false buses-start]
+      set buses-period lput ( (minutes-to-ticks item 2 row) + current-time ) buses-period
+      set current-time current-time + minutes-to-ticks item 2 row
+      if length next-SPs < length buses-id [
+        set next-SPs lput (list) next-SPs ;; create an empty list reflecting the next stop points for the added bus
+        let schedule ( range (last buses-period) (minutes-to-ticks (24 * 60)) (minutes-to-ticks (last buses-freq)) )   ;; generate the buses schedules across the next 24 house (note that it is assumed that the buses run with the same frequency across the whole day)
+        set buses-schedule lput schedule buses-schedule ;; create an empty list reflecting the next arrival times for the added bus (in ticks)
+      ]
+      
+    ]
+  ]
+end
+
+
+
+;; must be called after creating the buses
+to init-buses-parameters-network
+  ask roads [
+    ifelse buses? 
+    [
+      set current_period_non_car distance_to_destination / speed_limmit 
+      set distance_to_destination_bus distance_to_destination
+    ]
+    [
+      set current_period_non_car distance_to_destination / ( ((fastest-pedestrian + slowest-pedestrian) / 2) * (tick-time-scale / 3600) ) 
+      set distance_to_destination_bus 99999
+    ]
+  ]
+end
+
+to update-SPs
+  ;; access stop points
+  ask nodes with [sp-id > -1] [
+    let i 0
+    foreach buses-period [
+      t ->      
+      set buses-period replace-item i buses-period (t - 1)
+      set i i + 1
+    ]
+  ]
+end
+
+;; Follows functions added by Tatsuya
+to-report road-edges-with-times-csv
+  ;; Each line: from,to,drive,walk
+  report reduce word (map
+    [ r ->
+      (word
+        [who] of [end1] of r "," [who] of [end2] of r ","
+        [current_period] of r "," [mean_period_walk] of r "\n"
+      )
+    ]
+    sort roads
+  )
+end

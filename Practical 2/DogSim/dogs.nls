@@ -1,0 +1,193 @@
+breed [dogs dog]
+breed [trees tree]
+undirected-link-breed [leashes leash]
+
+dogs-own [
+  owner
+  my-leash
+  speed
+  tolerance           ; tolerance to being pulled by owner
+  curiosity-dogs      ; curiosity towards other dogs
+  curiosity-trees     ; curiosity towards environmental objects
+  memory-dogs
+  memory-trees
+  active?           
+  at-entry?         
+]
+
+leashes-own [
+  my-length
+]
+
+to dogs-init
+  
+  let total-n-dogs sum [n-dogs] of pedestrians
+  create-dogs total-n-dogs [
+    ;; define the owner and leash
+    set active? true
+    set at-entry? true
+    set owner one-of pedestrians with [my-type = "Dog walker" and length my-dogs < n-dogs]
+    let leash-temp nobody
+    create-leash-with owner [
+      set leash-temp self
+      set my-length 0.03
+      set color red
+      hide-link
+    ]
+    set my-leash leash-temp
+    ;; define the tolerance of the dog to leash being pulled
+    set tolerance 50
+    set curiosity-dogs 250
+    set curiosity-trees 250
+    set memory-dogs (list)
+    set memory-trees (list)
+    ;; define the shape and type of the dog
+    set shape "dog"
+    set size 20
+    set color red
+    ;; move the dog to a green space location around the owner
+    let dog-boundary nobody
+    ask owner [
+      set my-dogs lput myself my-dogs
+      set dog-boundary patches with [green? = true] in-radius ([my-length] of leash-temp * mile-to-model-factor)
+    ]
+    move-to one-of dog-boundary
+;    ask dog-boundary [set pcolor yellow]
+    hide-turtle
+  ]
+
+end
+
+;; Dogs movement behaviours
+to dogs-move
+  if not at-entry? [
+    ask patch-here [set dogs-footfall dogs-footfall + 1]
+    let my-distance-closest-tree distance-closest-tree
+    let my-distance-closest-dog distance-closest-dog
+    (ifelse
+      ;; ------------------------------------------------
+      ;; The dog sensed a tree with another owner
+      ;; ------------------------------------------------
+      (my-distance-closest-tree > 0 
+        and my-distance-closest-tree < 0.03 * mile-to-model-factor
+        and curiosity-trees > 0
+        ) [
+        ;; find the closes tree
+        let closest-tree min-one-of trees with [(not member? self [memory-trees] of myself)] [distance myself]
+        ;; move towards the closest tree (unless already at the tree)
+        face closest-tree
+        set speed [speed] of owner * 1.5
+        ifelse distance closest-tree > speed * mile-to-model-factor
+        [fd (speed * mile-to-model-factor)]
+        [ask owner [set pause? true]]
+        
+        ;; if the dog is still curious, deduce from the curiosity and force the pedestrian to pause its trip
+        ifelse curiosity-trees - 1 > 0 
+        [
+          set curiosity-trees curiosity-trees - 1
+        ]
+        ;; if the dog is no longer curious
+        [
+          set memory-trees lput closest-tree memory-trees
+          set curiosity-trees 2500
+          ask owner [set pause? false]
+        ]
+      ]
+      ;; ------------------------------------------------
+      ;; The dog sensed a dog with another owner
+      ;; ------------------------------------------------
+      (my-distance-closest-dog > 0 
+        and my-distance-closest-dog < 0.03 * mile-to-model-factor
+        and curiosity-dogs > 0
+        ) [
+        ;; find the closest dog that is not in the current memory of seen dogs
+        let closest-dog min-one-of dogs with [at-entry? = false and owner != [owner] of myself and (not member? self [memory-dogs] of myself)] [distance myself]
+        ;; move towards the dog (unless already very close to it)
+        face closest-dog
+        set speed [speed] of owner * 1.5
+        ifelse distance closest-dog > speed * mile-to-model-factor
+        [fd (speed * mile-to-model-factor)]
+        [ask owner [set pause? true]]
+        
+        ;; if the dog is still curious, deduce from the curiosity and force the pedestrian to pause its trip
+        ifelse curiosity-dogs - 1 > 0 
+        [
+          set curiosity-dogs curiosity-dogs - 1
+        ]
+        ;; if the dog is no longer curious
+        [
+          set memory-dogs lput closest-dog memory-dogs
+          set curiosity-dogs 250
+          ask owner [set pause? false]
+        ]
+      ]
+      ;; ------------------------------------------------
+      ;; The dog stepped outside the green area
+      ;; ------------------------------------------------
+      [green?] of patch-here = false [
+        face owner
+        set speed [speed] of owner * 1.5
+        fd (speed * mile-to-model-factor)
+      ]
+      
+      ;; ------------------------------------------------
+      ;; The dog trespassed the leash maximum length
+      ;; ------------------------------------------------
+      ;; trespassed the leash maximum length, and it still has tolerance to its leash being pulled back
+      (distance owner > ([my-length] of my-leash) * mile-to-model-factor) and tolerance >= 0 [
+        face owner
+        set speed [speed] of owner * 1.5
+        fd (speed * mile-to-model-factor)
+        set tolerance tolerance - 50   ;; 50 is the rate of decrease of tolerance
+                                       ;; a high decrease will lead the dog to quickly go back to the owner when leash is pulled
+      ]
+      ;; ------------------------------------------------
+      ;; The dog is within its leash maixumum length
+      ;; ------------------------------------------------
+      (distance owner < ([my-length] of my-leash) * mile-to-model-factor) and tolerance >= 0
+      [
+        set heading [heading] of owner
+        set heading heading + ( - 75 + random-float 150)
+        set speed [speed] of owner
+        fd (speed * mile-to-model-factor) * (0.8 + random-float 2)
+        set tolerance tolerance + 1  ;; gains 1 tolerance as long as the dog is within the leash
+      ]
+      ;; The dog has lost all its tolerance (it will keep moving towards the owner)
+      (tolerance < 0) [
+        face owner
+        set speed [speed] of owner * 1.5
+        fd (speed * mile-to-model-factor)
+        ifelse tolerance = -1 
+        [set tolerance 50]           ;; if the dog depleated all its negative tolerance, go back to its usual tolerance rate
+        [set tolerance tolerance + 1] ;; if the dog still has negative tolerance (intolerant), add 1 increment to its patience
+      ]
+    )
+  ]
+end
+
+;; Notify other dogs if the owner decides to finish the journey and leave the green space
+to notify-other-curious-dogs
+  let close-dogs other (dogs with [at-entry? = false] in-radius (0.03 * mile-to-model-factor))
+  if any? close-dogs [
+    ask close-dogs [
+      set memory-dogs lput myself memory-dogs
+      set curiosity-dogs 250
+      ask owner [set pause? false]
+    ]
+  ]
+end
+
+;; Report the distance to the closest tree
+to-report distance-closest-tree
+  ifelse any? trees with [(not member? self [memory-trees] of myself)]
+  [ report distance min-one-of trees with [(not member? self [memory-trees] of myself)] [distance myself] ]
+  [ report -1 ]
+end
+
+;; Report the distance to the closest dog
+to-report distance-closest-dog
+  ifelse any? dogs with [at-entry? = false and (owner != [owner] of myself) and (not member? self [memory-dogs] of myself)]
+  [ report distance min-one-of dogs with [at-entry? = false and (owner != [owner] of myself) and (not member? self [memory-dogs] of myself)] [distance myself] ]
+  [ report -1 ]
+end
+

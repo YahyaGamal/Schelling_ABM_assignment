@@ -1,0 +1,469 @@
+breed [vis-defaults vis-default]
+
+vis-defaults-own [
+  links-list
+  thickness-list
+  colours-list
+]
+
+to scenarios-step-1
+  ;; adjust the number of creted pedestrians based on the scenario
+  if scenario != "Baseline" [
+    set number-of-pedestrians 40
+    set slowest-pedestrian 2.5
+    set fastest-pedestrian 4
+    set max-start-time 15
+    set min-walk-distance 0.9
+    set max-walk-distance 0.9
+    set current-seed 10
+    set tick-time-scale 0.2
+    random-seed 10
+  ]
+end
+
+to scenarios-step-2
+  (ifelse 
+    scenario = "Baseline" [
+      ;; Select a set of links for pet
+      let links-all (list)
+      let links-temp nobody
+      ask node 138 [set links-temp nw:path-to node 162]
+      set links-all lput links-temp links-all
+      set links-all reduce sentence links-all
+      ask link-set links-all [
+        set pet 0
+        set pet_ignore_previous 0
+        set color red - 1 
+        set thickness 2.5
+      ]
+      
+       ;; Select a set of links for views
+      set links-all (list)
+      set links-temp nobody
+      ask node 69 [set links-temp nw:path-to node 41]
+      set links-all lput links-temp links-all
+      set links-all reduce sentence links-all
+      
+      ;; decrease the disuitlity of the road links
+      ask link-set links-all [
+        set view 0
+        set view_ignore_previous 0
+        set color green - 1 
+        set thickness 2.5
+      ]
+      
+      ;; trees
+      create-trees 1 [
+        set size 20
+        set color green - 1
+        move-to patch 185 355
+        set shape "tree"
+      ]
+      create-trees 1 [
+        set size 20
+        set color green - 1
+        move-to patch 215 280
+        set shape "tree"
+      ]
+    ]
+    
+    ; -------------------
+    ; No preferences
+    ; -------------------
+    scenario = "No preferences" [
+      
+      ask one-of pedestrians [
+        ask other pedestrians [die]
+        set my-entry node 109
+        set location node 109
+        move-to node 109
+        set my-type "No prefernces"
+        set color black
+        set access-weight 0
+        set view-weight 0
+        set pet-weight 0
+        set start-time 0
+      ]
+      
+      ;; Increase disutility from view
+      ask roads [
+        set color gray
+        set thickness 0.1
+        set access 0
+        set view 1
+        set pet 0
+        set access_ignore_previous 0
+        set view_ignore_previous 1
+        set pet_ignore_previous 0
+      ]
+      ;; Select a set of links
+      let links-all (list)
+      let links-temp nobody
+      ;  ask node 83 [set links-temp nw:path-to node 40]
+      ask node 69 [set links-temp nw:path-to node 40]
+      set links-all lput links-temp links-all
+      ;  ask node 239 [set links-temp nw:path-to node 162]
+      ;  set links-all lput links-temp links-all
+      ask node 40 [set links-temp nw:path-to node 162]
+      set links-all lput links-temp links-all
+      ask node 239 [set links-temp nw:path-to node 162]
+      set links-all lput links-temp links-all
+      set links-all reduce sentence links-all
+      ;; decrease the disuitlity of the road links
+      ask link-set links-all [
+        set view 0
+        set view_ignore_previous 0
+        set color green - 1 
+        set thickness 3
+      ]
+    ]
+    
+    ; -------------------
+    ; Environmental 1
+    ; -------------------
+    scenario = "Environmental 1" [
+      
+      ask one-of pedestrians [
+        ask other pedestrians [die]
+        set my-entry node 109
+        set location node 109
+        move-to node 109
+        set my-type "Environmental"
+        set color green
+        set access-weight 0
+        set view-weight 1
+        set pet-weight 0
+        set start-time 0
+      ]
+      
+      ;; Increase disutility from view
+      ask roads [
+        set color gray
+        set thickness 0.1
+        set access 0
+        set view 1
+        set pet 0
+        set access_ignore_previous 0
+        set view_ignore_previous 1
+        set pet_ignore_previous 0
+      ]
+      ;; Select a set of links
+      let links-all (list)
+      let links-temp nobody
+      ;  ask node 83 [set links-temp nw:path-to node 40]
+      ask node 69 [set links-temp nw:path-to node 40]
+      set links-all lput links-temp links-all
+      ;  ask node 239 [set links-temp nw:path-to node 162]
+      ;  set links-all lput links-temp links-all
+      ask node 40 [set links-temp nw:path-to node 162]
+      set links-all lput links-temp links-all
+      ask node 239 [set links-temp nw:path-to node 162]
+      set links-all lput links-temp links-all
+      set links-all reduce sentence links-all
+      ;; decrease the disuitlity of the road links
+      ask link-set links-all [
+        set view 0
+        set view_ignore_previous 0
+        set color green - 1 
+        set thickness 3
+      ]
+    ]
+    
+    ; -------------------
+    ; Environmental 2
+    ; -------------------
+    scenario = "Environmental 2" [
+      
+      ask one-of pedestrians [
+        ask other pedestrians [die]
+        set my-entry node 109
+        set location node 109
+        move-to node 109
+        set my-type "Environmental"
+        set color green
+        set access-weight 0
+        set view-weight 1
+        set pet-weight 0
+        set start-time 0
+      ]
+      
+      ;; Increase disutility from view
+      ask roads [
+        set color gray
+        set thickness 0.1
+        set access 0
+        set view 1
+        set pet 0
+        set access_ignore_previous 0
+        set view_ignore_previous 1
+        set pet_ignore_previous 0
+      ]
+      ;; Select a set of links
+      let links-all (list)
+      let links-temp nobody
+      ask node 69 [set links-temp nw:path-to node 40]
+      set links-all lput links-temp links-all
+      ask node 40 [set links-temp nw:path-to node 9]
+      set links-all lput links-temp links-all
+      ask node 9 [set links-temp nw:path-to node 284]
+      set links-all lput links-temp links-all
+      ask node 284 [set links-temp nw:path-to node 162]
+      set links-all lput links-temp links-all
+      ask node 239 [set links-temp nw:path-to node 162]
+      set links-all lput links-temp links-all
+      set links-all reduce sentence links-all
+      ;; decrease the disuitlity of the road links
+      ask link-set links-all [
+        set view 0
+        set view_ignore_previous 0
+        set color green - 1 
+        set thickness 3
+      ]
+    ]
+    
+    ; -------------------
+    ; Dog walker 1
+    ; -------------------
+    scenario = "Dog walker 1" [
+      ask one-of pedestrians [
+        ask other pedestrians [die]
+        set my-entry node 109
+        set location node 109
+        move-to node 109
+        set my-type "Dog walker"
+        set color red
+        set access-weight 0
+        set view-weight 0
+        set pet-weight 1
+        set n-dogs 1
+        set start-time 0
+      ]
+      ;; Increase disutility from pets
+      ask roads [
+        set color gray
+        set thickness 0.1
+        set access 0
+        set view 0
+        set pet 1
+        set access_ignore_previous 0
+        set view_ignore_previous 0
+        set pet_ignore_previous 1
+      ]
+      ;; Select a set of links
+      let links-all (list)
+      let links-temp nobody
+      ask node 69 [set links-temp nw:path-to node 40]
+      set links-all lput links-temp links-all
+      ask node 40 [set links-temp nw:path-to node 162]
+      set links-all lput links-temp links-all
+      ask node 138 [set links-temp nw:path-to node 162]
+      set links-all lput links-temp links-all
+      set links-all reduce sentence links-all
+      ask link-set links-all [
+        set pet 0
+        set pet_ignore_previous 0
+        set color red - 1 
+        set thickness 3
+      ]
+      
+      ;; initialise the dogs
+      dogs-init
+    ]
+    
+    ; -------------------
+    ; Dog walker 2
+    ; -------------------
+    scenario = "Dog walker 2" [
+      ask one-of pedestrians [
+        ask other pedestrians [die]
+        set my-entry node 109
+        set location node 109
+        move-to node 109
+        set my-type "Dog walker"
+        set color red
+        set access-weight 0
+        set view-weight 0
+        set pet-weight 1
+        set n-dogs 1
+        set start-time 0
+      ]
+      dogs-init
+      create-trees 1 [
+        set size 20
+        set color green - 1
+        move-to patch 185 355
+        set shape "tree"
+      ]
+    ]
+    
+    ; -------------------
+    ; Dog walker 4
+    ; -------------------
+    scenario = "Dog walker 4" [
+      let pedestrian-1 one-of pedestrians with [my-entry = node 109]
+      let pedestrian-2 one-of pedestrians with [my-entry = node 0]
+      let selected (turtle-set pedestrian-1 pedestrian-2)
+      ask pedestrian-1 [
+        set my-entry node 109
+        set location node 109
+        move-to node 109
+        set my-type "Dog walker"
+        set color red
+        set access-weight 0
+        set view-weight 0
+        set pet-weight 1
+        set n-dogs 1
+        set start-time 400
+        show-turtle
+        ask turtle-set my-dogs [show-turtle]
+      ]
+      ask pedestrian-2 [
+        set my-entry node 0
+        set location node 0
+        move-to node 0
+        set my-type "Dog walker"
+        set color red
+        set access-weight 0
+        set view-weight 0
+        set pet-weight 1
+        set n-dogs 1
+        set start-time 0
+      ]
+      ask pedestrians [
+        if self != pedestrian-1 and self != pedestrian-2 [die]
+      ]
+      
+      ;; Select a set of links for pet
+      let links-all (list)
+      let links-temp nobody
+      ask node 138 [set links-temp nw:path-to node 162]
+      set links-all lput links-temp links-all
+      set links-all reduce sentence links-all
+      ask link-set links-all [
+        set pet 0
+        set pet_ignore_previous 0
+        set color red - 1 
+        set thickness 2.5
+      ]
+      
+      dogs-init
+    ]
+    
+    scenario = "Dog walker 3" [
+      ask one-of pedestrians [
+        ask other pedestrians [die]
+        set my-entry node 109
+        set location node 109
+        move-to node 109
+        set my-type "Dog walker"
+        set color red
+        set access-weight 0
+        set view-weight 0
+        set pet-weight 1
+        set n-dogs 1
+        set start-time 0
+      ]
+      dogs-init
+      create-trees 1 [
+        set size 20
+        set color green - 1
+        move-to patch 185 355
+        set shape "tree"
+      ]
+    ]
+  )
+end
+
+
+to visualise
+  ifelse any? pedestrians with [active? = true] [type "Cannot visualise until the run is completed. Please run the model until the go-green button stops.\n"]
+  [
+    if current-visualise-mode = 0 [
+      create-vis-defaults 1 [
+        let l (list) ;; links
+        let t (list) ;; thickness
+        let c (list) ;; colours
+        ask roads [
+          set l lput self l
+          set t lput thickness t
+          set c lput color c
+        ]
+        set links-list l
+        set thickness-list t
+        set colours-list c
+      ]
+    ]
+    (ifelse
+      visualise-mode = "Default" [
+        ask one-of vis-defaults [
+          foreach links-list [
+            l -> 
+            let i position l links-list
+            let t item i thickness-list
+            let c item i colours-list
+            ask l [
+              set thickness t
+              set color c
+            ]
+          ]
+        ]
+        ask (turtle-set nodes trees) [show-turtle]
+        ask patches with [green?] [set pcolor green + 4]
+        ask patches with [not green?] [set pcolor white]
+      ]
+      visualise-mode = "Footfall" [
+        ask turtles [hide-turtle]
+        ask patches [set pcolor white]
+        ask roads [
+          set thickness 2.5
+          set color scale-color red footfall_all (max [footfall_all] of roads * 2) (min [footfall_all] of roads)
+        ]
+      ]
+      
+      visualise-mode = "Dogs paths" [
+        ask turtles [hide-turtle]
+        ask patches [set pcolor white]
+        ask roads [set thickness 1 set color grey]
+        ask patches [set pcolor scale-color red dogs-footfall (30) (0) ]
+      ]
+      
+      visualise-mode = "Dogs hotspots" [
+        ask turtles [hide-turtle]
+        ask patches [set pcolor white]
+        ask roads [set thickness 1 set color grey]
+        let dog-patches patches with [dogs-footfall > 0]
+        let non-dog-patches patches with [dogs-footfall = 0]
+        ask dog-patches [
+          set pcolor grey
+          ask patches in-radius 30 [
+            set dogs-hotspot dogs-hotspot + ([dogs-footfall] of myself * (1 - (distance myself / 30)))
+          ]
+        ]
+        let upper max [dogs-hotspot] of patches
+        let lower min [dogs-hotspot] of patches
+        ask patches [set pcolor scale-color red dogs-hotspot (upper * 0.6) (lower) ]
+      ]
+    )
+  ]
+end
+
+
+;; report the distance scaled as the map (in miles)
+to-report scaled-distance [input-node]
+  report (distance input-node) * model-to-mile-factor
+end
+
+to-report minutes-to-ticks [minutes]
+  report (minutes * 60) / tick-time-scale
+end
+
+
+to-report hours->ticks [h]
+  report round (h * 3600 / tick-time-scale)
+end
+
+to-report ticks->hours [t]
+  report (t * tick-time-scale) / 3600
+end
+
+
