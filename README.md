@@ -31,4 +31,6 @@ Alternatively, run the following command line at the directory where the GitHub 
 pip install -r requirements.txt
 ```
 
-If you face issues with installing the Python libraries and cannot run the model in the Jupyter notebook, you can run an online version of the model through this [NetLogo Web link](https://www.netlogoweb.org/launch#https://www.netlogoweb.org/assets/modelslib/Sample%20Models/Social%20Science/Segregation.nlogo) (note that the `similarity_threshold` is labelled as `%-similar-wanted` in the NetLogo version).
+If you face issues with installing the Python libraries and cannot run the model in the Jupyter notebook, you can run an online version of the model through the following links:
+1. Assignment: [Schelling NetLogo Web link](https://www.netlogoweb.org/launch#https://www.netlogoweb.org/assets/modelslib/Sample%20Models/Social%20Science/Segregation.nlogox)
+2. Week 1 practical: [Predator-prey NetLogo Web link](https://www.netlogoweb.org/launch#https://www.netlogoweb.org/assets/modelslib/Sample%20Models/Biology/Wolf%20Sheep%20Predation.nlogox)
