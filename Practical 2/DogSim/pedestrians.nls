@@ -82,7 +82,7 @@ end
 
 to assign-type-weights
   ;; Load dataset
-  let csv-data csv:from-file "Data/showcase/types_weights.csv"
+  let csv-data csv:from-file "Data/types_weights.csv"
   
   ;; Separate the header row from the data rows
   let header-row first csv-data

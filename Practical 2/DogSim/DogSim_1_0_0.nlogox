@@ -36,8 +36,8 @@ patches-own [
 to import-gis
   gis:load-coordinate-system "Data/27700.wkt"
 ;  gis:set-world-envelope (list min-pxcor max-pxcor min-pycor max-pycor)
-  let greens gis:load-dataset "Data/showcase/green.geojson"
-  let paths gis:load-dataset "Data/showcase/paths.geojson"
+  let greens gis:load-dataset "Data/green.geojson"
+  let paths gis:load-dataset "Data/paths.geojson"
   gis:draw greens 2
   gis:draw paths 2
 ;  ask patches [if gis:intersects? greens self = true [set pcolor green + 2]]
@@ -58,7 +58,7 @@ to setup-showcase
   ask patches[ set pcolor white ]
   load-network
   gis:load-coordinate-system "Data/27700.wkt"
-  let greens gis:load-dataset "Data/showcase/green.geojson"
+  let greens gis:load-dataset "Data/green.geojson"
   gis:draw greens 2
   ask patches [
     set green? false
