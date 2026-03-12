@@ -21,9 +21,9 @@ To run the model in the `assignment.ipynb` and `practical_1.ipynb` Jupyter noteb
 - `matplotlib` version 3.10.0
 - `ipython` version 8.32.0
 
-To install these libraries, run the code block in the Jupyter notebooks:
+To install these libraries, run the following code block in the Jupyter notebooks:
 ```
-pip install numpy==1.26.4 matplotlib==3.10.0 ipython==8.32.0
+! pip install numpy==1.26.4 matplotlib==3.10.0 ipython==8.32.0
 ```
 
 Alternatively, run the following command line at the directory where the GitHub repository files have been downloaded and saved:
