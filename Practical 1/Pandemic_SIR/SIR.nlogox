@@ -11,6 +11,57 @@ individuals-own [
   state               ;; "S" for susceptible, "I" for infected, "R" for recovered
   infected-period     ;; time I have been infected
 ]
+
+;; -------------------------------
+;; individual functions
+;; -------------------------------
+
+;; behaviour 1
+to move
+  face target-patch  ;; look at the target patch
+  forward 1
+  (ifelse
+    ;; if I am at work, target home
+    patch-here = work-patch   ;; if the patch I am in is work
+    [set target-patch home-patch]
+    ;; if I am at home, target work
+    patch-here = home-patch   ;; if the patch I am in is home
+    [set target-patch work-patch]
+  )
+end
+
+;; behaviour 2
+to recover-after-infection-period
+  if state = "I" [
+    set infected-period infected-period + 1
+    if infected-period >= virus-infection-period [set state "R"]
+  ]
+end
+
+;; behaviour 3 (interaction)
+to infect-others
+  if state = "I" [
+    ;; if there is another individual around me within a radius, infect it if it is "S" susceptabel
+    let surrounding-individuals (individuals with [state = "S"] in-radius 1) ;; individuals that are "S" and are 1 patch away
+    if any? surrounding-individuals [   ;; added for efficiency
+      ;; infect the surrounding individuals
+      ask surrounding-individuals [
+        set state "I"
+        set infected-period 0
+      ]
+    ]
+  ]
+end
+
+to color-individual
+  (ifelse
+    state = "S" [set color blue]
+    state = "I" [set color red]
+    state = "R" [set color green]
+    )
+end
+
+
 ;; ---------------------------
 ;; Global functions
 ;; ---------------------------
@@ -52,26 +103,12 @@ end
 to go
   ;; iterate through all the individuals
   ask individuals [
-    move-to-target-patch
-    
-    (ifelse
-      ;; if I am at work, target home
-      patch-here = work-patch   ;; if the patch I am in is work
-      [set target-patch home-patch]
-      ;; if I am at home, target work
-      patch-here = home-patch   ;; if the patch I am in is home
-      [set target-patch work-patch]
-    )
-    
-    ;; if I am infected, increase the infection period
-    if state = "I" [
-      ;; infect others
-      infect-others
-      set infected-period infected-period + 1
-      ;; if I finished my infection period, become recovered
-      recover-after-infection-period
-    ]
-    
+    ;; Move to house or work (note that at initialisation, 
+    move
+    ;; Infect other individuals
+    infect-others
+    ;; Recover after being infected (if infected)
+    recover-after-infection-period
     ;; color the individual
     color-individual
   ]
@@ -83,43 +120,10 @@ to go
   
 end
 
-;; -------------------------------
-;; individual functions
-;; -------------------------------
-;; behaviour 1
-to move-to-target-patch
-  face target-patch  ;; look at the target patch
-  forward 1
-end
-
-;; behaviour 2
-to recover-after-infection-period
-  if infected-period >= virus-infection-period [set state "R"]
-end
-
-;; behaviour 3 (interaction)
-to infect-others
-  ;; if there is another individual around me within a radius, infect it if it is "S" susceptabel
-  let surrounding-individuals (individuals with [state = "S"] in-radius 1) ;; individuals that are "S" and are 2 patches away
-  if any? surrounding-individuals [   ;; added for efficiency
-    ;; infect the surrounding individuals
-    ask surrounding-individuals [
-      set state "I"
-      set infected-period 0
-    ]
-  ]
-end
-
-to color-individual
-  (ifelse
-    state = "S" [set color blue]
-    state = "I" [set color red]
-    state = "R" [set color green]
-    )
-end]]></code>
+]]></code>
   <widgets>
     <view x="375" wrappingAllowedX="false" y="25" frameRate="30.0" minPycor="-64" height="429" showTickCounter="true" patchSize="3.3" fontSize="10" wrappingAllowedY="false" width="429" tickCounterLabel="ticks" maxPycor="64" updateMode="0" maxPxcor="64" minPxcor="-64"></view>
-    <slider x="15" step="1" y="70" max="100" width="355" display="number-of-individuals" height="50" min="0" direction="Horizontal" default="100.0" variable="number-of-individuals"></slider>
+    <slider x="15" step="1" y="70" max="100" width="355" display="number-of-individuals" height="50" min="1" direction="Horizontal" default="100.0" variable="number-of-individuals"></slider>
     <slider x="15" step="1" y="125" max="100" width="355" display="infected-%" height="50" min="0" direction="Horizontal" default="10.0" variable="infected-%" units="%"></slider>
     <slider x="15" step="1" y="180" max="1000" width="355" display="virus-infection-period" height="50" min="0" direction="Horizontal" default="400.0" variable="virus-infection-period" units="ticks"></slider>
     <plot x="15" autoPlotX="true" yMax="10.0" autoPlotY="true" y="240" xMin="0.0" height="215" legend="true" xMax="10.0" yMin="0.0" width="355" display="SIR">
