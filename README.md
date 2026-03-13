@@ -2,21 +2,17 @@
 
 ## Agent Based Models (ABMs) assignment and practical
 
-The repository includes the following relevant files:
-1. Assignment
-- `\Assignment\assignment.ipynb`: a Python Jupyter notebook including:
-    - Schelling model description
-    - Code block for running the Schelling model with different input parameters
-    - Assignment questions to be addressed by the students
-- `\Assignment\schelling.py`: a Python file with the full code for the Schelling model. Understaning the details of this file is optional and is not required to answer the assignment questions.
-2. Week 1 practical
-- `\Practical_1\practical_1.ipynb`: a Python Jupyter notebook including:
-    - Predator-prey model description
-    - Code block for running the predator-prey model with different input parameters
-    - Sample questions (to be familiar with the assignment questions)
-- `\Practical_1\predator_prey.py`: a Python file with the full code for the predator-prey model. Understaning the details of this file is optional and is not required to answer the practical questions.
+The repository includes the following relevant folders and files:
+1. Week 1 practical session
+- `\Practical 1\Pandemic_SIR\`: a NetLogo pandemic model
+- `\Practical 1\Predator_prey\`: a Python predator-prey model to practice the assignment
+2. Week 2 practical session
+- `\Practical_2\DogSim\`: a NetLogo model for pedestians movement inside parks, including dogwalkers
+- `\Practical_2\Wealth_Boltzmann`: a Python wealth distribution model (using the Mesa library).
+3. Assignment
+- `\Assignment\assignment.ipynb`: a Jupyter notebook including a Schelling model and a set of assignment questions.
 
-To run the model in the `assignment.ipynb` and `practical_1.ipynb` Jupyter notebooks, you need to install the following packages:
+To run the models in the `assignment.ipynb` Jupyter notebooks, you need to install the following packages:
 - `numpy` version 1.26.4
 - `matplotlib` version 3.10.0
 - `ipython` version 8.32.0
